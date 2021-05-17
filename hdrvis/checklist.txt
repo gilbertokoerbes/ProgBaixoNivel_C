@@ -1,0 +1,1 @@
+2.1  Leitura e decodificação da imagem HDF (OK)

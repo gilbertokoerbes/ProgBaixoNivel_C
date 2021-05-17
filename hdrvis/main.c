@@ -44,24 +44,39 @@ int maxLevel = 255;
 // quando for necessário (ex: algoritmo de tone mapping, etc)
 void process()
 {
-    printf("Exposure: %.3f\n", exposure);
-    float expos = pow(2,exposure);
+    float *fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));//array apara alocar RGB's em Float
+    int tamImage = sizeof(image);
+    printf("Tamanho da imagem original = %d", tamImage);
+    unsigned char* ptrImg = image;//ponteiro para o vetor imagem
+    float mantissa = 0.0;
+    for(int i=0; i<tamImage; i++){
+        //unsigned char* ptrAux = *ptrImg; // cópia o ponteiro da posição atual
+        //*ptrAux = *ptrAux+3; // avança tres possies para chegar no byte mantissa
+        int mantissaPixel = (*ptrImg+3) - 136; 
+        mantissa= pow(2, mantissaPixel); 
+        printf("Mantissa calculada = %f", tamImage);
+        *fpixels++ = (*ptrImg) * mantissa;  
+        
+    }
 
-    //
+
+
+    //printf("Exposure: %.3f\n", exposure);
+    //float expos = pow(2,exposure); 
     // EXEMPLO: preenche a imagem com pixels cor de laranja...
     //
     //
     // SUBSTITUA este código pelos algoritmos a serem implementados
     //
 
-    unsigned char* ptr = image8;
-    int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel
-    for(int pos=0; pos<totalBytes; pos+=3) {
-        // Gera tons de LARANJA, de acordo com o fator de exposição
-        *ptr++ = (unsigned char) (255 * expos);
-        *ptr++ = (unsigned char) (127 * expos);
-        *ptr++ = (unsigned char) (0 * expos);
-    }
+    //unsigned char* ptr = image8;
+    //int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel
+    //for(int pos=0; pos<totalBytes; pos+=3) {
+    //    // Gera tons de LARANJA, de acordo com o fator de exposição
+    //    *ptr++ = (unsigned char) (expos);
+    //    *ptr++ = (unsigned char) (expos);
+    //    *ptr++ = (unsigned char) (expos);
+    //}
 
     // Dica: se você precisar de um vetor de floats para armazenar
     // a imagem convertida, etc, use este trecho
@@ -70,7 +85,7 @@ void process()
     
     // NÃO ALTERAR A PARTIR DAQUI!!!!
     //
-    // free(fpixels);
+    free(fpixels);
     buildTex();
 }
 
@@ -91,13 +106,10 @@ int main(int argc, char** argv)
     FILE* arq = fopen(argv[1], "rb");
     carregaHeader(arq);
 
-    //
-    // IMPLEMENTE AQUI o código necessário para
-    // extrair as informações de largura e altura do header
-    //
-    // Descomente a linha abaixo APENAS quando isso estiver funcionando!
-    //
-    // carregaImagem(arq, minhaLargura, minhaAltura);
+    sizeX = (header[3] * 1)+(header[4] * 256)+(header[5] * 65536 )+(header[6]*4294967296); // le largura
+    sizeY = (header[7] * 1)+(header[8] * 256)+(header[9] * 65536 )+(header[10]*4294967296); // le altura
+    printf("Largura %d  x  Altura %d\n", sizeX, sizeY);
+    carregaImagem(arq, sizeX, sizeY);
     
     // Fecha o arquivo
     fclose(arq);
@@ -106,7 +118,7 @@ int main(int argc, char** argv)
     // COMENTE a linha abaixo quando a leitura estiver funcionando!
     // (caso contrário, ele irá sobrepor a imagem carregada com a imagem de teste)
     //
-    criaImagensTeste();
+    //criaImagensTeste();
 
     exposure = 0.0f; // exposição inicial
 
