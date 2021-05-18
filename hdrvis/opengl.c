@@ -242,7 +242,8 @@ void mouse(int button, int state, int x, int y)
     glutPostRedisplay();
 }
 
-#define OFFSET 0.05
+//#define OFFSET 0.05
+#define OFFSET 0.5
 void arrow_keys(int a_keys, int x, int y)
 {
     switch (a_keys)

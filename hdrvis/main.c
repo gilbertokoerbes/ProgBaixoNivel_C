@@ -44,53 +44,86 @@ int maxLevel = 255;
 // quando for necessário (ex: algoritmo de tone mapping, etc)
 void process()
 {
-    float *fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));//array apara alocar RGB's em Float
-    int tamImage = sizeof(image);
-    printf("Tamanho da imagem original = %d", tamImage);
+
+    /////////////////MANTISSA/////////////////////////
+    float* fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));//array apara alocar RGB's em Float
+    int tamImage = sizeX * sizeY * 4;    
     unsigned char* ptrImg = image;//ponteiro para o vetor imagem
-    float mantissa = 0.0;
-    for(int i=0; i<tamImage; i++){
-        //unsigned char* ptrAux = *ptrImg; // cópia o ponteiro da posição atual
-        //*ptrAux = *ptrAux+3; // avança tres possies para chegar no byte mantissa
-        int mantissaPixel = (*ptrImg+3) - 136; 
-        mantissa= pow(2, mantissaPixel); 
-        printf("Mantissa calculada = %f", tamImage);
-        *fpixels++ = (*ptrImg) * mantissa;  
-        
+    float mantissa = 0.0;   
+    float *bkp;
+    bkp = fpixels;
+    for(int i=0;i<tamImage;i+=4){
+        float mantissa = pow(2, image[i+3]-136);
+        float v1 = image[i]*mantissa;
+        float v2 = image[i+1]*mantissa;
+        float v3 = image[i+2]*mantissa;
+        *fpixels++ = v1;
+        *fpixels++ = v2;
+        *fpixels++ = v3;       
+    } 
+
+
+    /////////////////EXPOSURE/////////////////////////
+    printf("Exposure: %.3f", exposure);
+    float expos = pow(2,exposure); 
+    unsigned char* ptr = image8;
+    unsigned char* ptr8 = image8;
+    printf("\nvalor em prt Init: %p", *ptr);
+    printf("\nvalor em prt Init: %d", *ptr);
+    printf("\nvalor em prt Init: %p | endereco img8: %x", ptr, &image8);
+    printf("\nvalor em img8 Init: %f", image8);
+    printf("\n ");
+
+    int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel    
+    for(int pos=0; pos<totalBytes; pos+=3) {              
+        *ptr++ = (unsigned char) (*bkp++ * expos);        
+        *ptr++ = (unsigned char) (*bkp++ * expos);
+        *ptr++ = (unsigned char) (*bkp++ * expos);
     }
 
-
-
-    //printf("Exposure: %.3f\n", exposure);
-    //float expos = pow(2,exposure); 
-    // EXEMPLO: preenche a imagem com pixels cor de laranja...
-    //
-    //
-    // SUBSTITUA este código pelos algoritmos a serem implementados
-    //
-
-    //unsigned char* ptr = image8;
-    //int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel
-    //for(int pos=0; pos<totalBytes; pos+=3) {
-    //    // Gera tons de LARANJA, de acordo com o fator de exposição
-    //    *ptr++ = (unsigned char) (expos);
-    //    *ptr++ = (unsigned char) (expos);
-    //    *ptr++ = (unsigned char) (expos);
-    //}
-
-    // Dica: se você precisar de um vetor de floats para armazenar
-    // a imagem convertida, etc, use este trecho
-    // (não esqueça o free no final)
-    // float *fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));
+    //////////////////MAPPING////////////////////////
+    //ptrImg = image8;//ponteiro para o vetor imagem
+    //unsigned char* ptr8 = image8;
+    printf("\nvalor em prt8 Init: %p", *ptr8);
+    printf("\nvalor em prt8 Init: %d", *ptr8);
+    printf("\nvalor em prt8 Init: %p | endereco img8: %x", ptr8, &image8);
+    printf("\nvalor em img8 Init: %f", image8);
     
-    // NÃO ALTERAR A PARTIR DAQUI!!!!
-    //
-    free(fpixels);
+    for(int pos1=0;pos1<totalBytes;pos1++){
+
+        float rbg = (*ptr8) * 0.6;
+        float rgbResult =((rbg)*(2.51*(rbg) + 0.03))/((rbg)*(2.43*(rbg)+0.59)+0.14);     
+        if(rgbResult>1){
+            *ptr8=  1;
+        }
+        else if(rgbResult<0){
+            *ptr8=  0;
+        }else{
+            *ptr8 = rgbResult;
+        }
+        *ptr8++;
+    }
+        //i++;
+        //double blue = image[i] * 0.6;
+        //blue = (blue*(2.51*blue + 0,03))/(blue*(2,43*blue+0,59)+0,14);
+        //
+        //if(blue>1){
+        //    red=1;
+        //}
+        //else if(blue<0){
+        //    blue=0;
+        //}
+        //i = i+2;      
+        
+
+    //free(fpixels);
     buildTex();
+    
 }
 
 int main(int argc, char** argv)
 {
+
     if(argc==1) {
         printf("hdrvis [image file.hdf]\n");
         exit(1);
@@ -186,4 +219,5 @@ void carregaImagem(FILE* fp, int largura, int altura)
         printf("%02X %02X %02X %02X\n", image[i], image[i+1], image[i+2], image[i+3]);
     }
 }
+
 

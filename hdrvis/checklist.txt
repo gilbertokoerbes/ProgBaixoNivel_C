@@ -1,1 +1,7 @@
+#Description
+https://mflash.github.io/progswb2/trab/t1-211-nklwefy6d87yhiuekrgfv/index.html
+
+#checkList
 2.1  Leitura e decodificação da imagem HDF (OK)
+2.2  Aplicação do fator de exposição
+2.3  Algorítimo de tone mapping
