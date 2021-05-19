@@ -54,8 +54,8 @@ void process()
     float *bkp;
     bkp = fpixels;
     float* ptrE = fpixels;    // Exposure
-    //float* ptrM = fpixels;     // Mapping 
-    //float* ptrG = fpixels;     // Gama 
+    float* ptrM = fpixels;     // Mapping 
+    float* ptrG = fpixels;     // Gama 
 
 
     
@@ -72,21 +72,28 @@ void process()
         *fpixels++;      
     }
     fpixels = bkp;
+    //printf ("\nImage entrada [0] = %02X", image[0]);
    
 
       /////////////////EXPOSURE/////////////////////////
 
-    printf("Exposure: %.3f", exposure);
-    float expos = pow(2,exposure); 
+    printf("\n Exposure: %.3f", exposure);
+    float expos = pow(2,exposure);
+    printf("\n Expos calculado: %f", expos);
     unsigned char* ptr = image8;
-    unsigned char* ptr8 = image8;
-  
+    unsigned char* ptr8 = image8;  
  
     for(int pos=0; pos<totalBytes; pos+=3) {              
-        *ptr++ = (unsigned char) (*bkp++ * expos);        
-        *ptr++ = (unsigned char) (*bkp++ * expos);
-        *ptr++ = (unsigned char) (*bkp++ * expos);
+        *ptr++ = (unsigned char) (*ptrE++ * expos);        
+        *ptr++ = (unsigned char) (*ptrE++ * expos);
+        *ptr++ = (unsigned char) (*ptrE++ * expos);
     }
+    *ptr--;
+    printf("\n Expos ptr: %c", *ptr);
+    printf("\n Expos ptr: %f", *ptr);
+
+
+
 
 
 /*
@@ -103,53 +110,65 @@ void process()
 
     fpixels = bkp;    
     //////////////////MAPPING////////////////////////
-    unsigned char* ptrM = image8;
-  
+    //unsigned char* ptrM = image8;
+    //printf("\n ===========MAPPING INIT:===========");
+    //printf("\n TotalBytes = %d", totalBytes);
     for(int pos1=0;pos1<totalBytes;pos1++){
-        float rbg = (*ptrM) * 0.6;
-        float rgbResult =((rbg)*(2.51*(rbg) + 0.03))/((rbg)*(2.43*(rbg)+0.59)+0.14);     
-        if(rgbResult>1){
-            *ptrM= (unsigned char) (1);
-        }
-        else if(rgbResult<0){
-            *ptrM= (unsigned char) (0);
-        }else{
-            *ptrM = (unsigned char) (rgbResult);
-        }
-        *ptrM++;
-    }          
+        float rgb = (*ptrM) * 0.6;
+        //printf("\n RGB8 0.6 = %f", rgb);
+        float rgbResult =((rgb)*(2.51*(rgb) + 0.03))/((rgb)*(2.43*(rgb)+0.59)+0.14);   
 
+        if(rgbResult>1) rgbResult= 1;
+        if(rgbResult<0) rgbResult = 0; 
+        //printf("\n RGB8 result = %f", rgbResult);
+
+        *fpixels++ = rgbResult;
+        
+        //printf("\n valor gravado no ponteiro: %p", *fpixels);
+        *ptrM++;
+        //printf("\n i = %d", pos1);
+    }          
+    //printf("\n MAPPING OK:");
+    //printf("\n =====GAMA INIT:========");
       ///////////////////////////CORREÇÃO GAMA///////////////////////////////////
     fpixels = bkp;
-    unsigned char* ptrG = image8;
+    //unsigned char* ptrG = image8;
     for(int pos1=0;pos1<totalBytes;pos1++){
         float gama = (1/1.8);
         gama = pow((*ptrG), gama);
-        *ptrG = (unsigned char) (gama);
-        *ptrG++;  
+        //printf("\n Gama calculado = %f", gama);
+        *fpixels = gama;
+       // printf("\n valor gravado no ponteiro: %p", *fpixels);
+        *ptrG++;
+        *fpixels++;  
     }
+   // printf("\n =====GAMA OK:========");
+    fpixels = bkp;
     /////////////////////////24 bits///////////////////////////////////
+    //printf("\n =====24 bits INIT:========");
     unsigned char* ptrBit = image8;  
     for(int pos1=0;pos1<totalBytes;pos1++){
-        float rgb8 = (*ptrBit) * 255;     
+        float rgb8 = (*fpixels) * 255;
+        if (rgb8>255) rgb8 = 255;
+        if (rgb8<0) rgb8 = 0;
+        
+        //printf("\n RGB8 = %f", rgb8);    
         *ptrBit = (unsigned char)(rgb8);
+        //printf("\n ptrBit gravado = %c", *ptrBit);
         *ptrBit++;  
+        *fpixels++;
     }
-    *ptrBit--;
-    printf("\nValor em prtBit = %c", *ptrBit);
-    printf("\nValor em image8 = %d", image8[0]);
-    printf("\nValor em image8 = %02X", image8[0]);
-
-    /*
-    fpixels = bkp;
+    //printf("\n 24 bits OK:");
+    /*fpixels = bkp;
     for(int i=0;i<totalBytes;i++){
         float rgb8 = (*fpixels) * 255;     
         image8[i] = (unsigned char)(rgb8);
         *fpixels++;
-    }*/
+    }
+    printf("\n 24 bits OK:");*/
     
 
-    free(fpixels);
+    //free(fpixels);
     buildTex();
     
 }
