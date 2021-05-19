@@ -76,7 +76,7 @@ void process()
    
 
       /////////////////EXPOSURE/////////////////////////
-
+/*
     printf("\n Exposure: %.3f", exposure);
     float expos = pow(2,exposure);
     printf("\n Expos calculado: %f", expos);
@@ -91,12 +91,12 @@ void process()
     *ptr--;
     printf("\n Expos ptr: %c", *ptr);
     printf("\n Expos ptr: %f", *ptr);
+*/
 
 
 
 
 
-/*
     /////////////////EXPOSURE/////////////////////////
     printf("\n Exposure: %.3f", exposure);
     float expos = pow(2,exposure); 
@@ -105,7 +105,7 @@ void process()
         *fpixels++ = (*ptrE++ * expos);        
         *fpixels++ = (*ptrE++ * expos);
         *fpixels++ = (*ptrE++ * expos);
-    }*/
+    }
 
 
     fpixels = bkp;    
