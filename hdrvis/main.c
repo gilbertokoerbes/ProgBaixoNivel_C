@@ -47,76 +47,109 @@ void process()
 
     /////////////////MANTISSA/////////////////////////
     float* fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));//array apara alocar RGB's em Float
-    int tamImage = sizeX * sizeY * 4;    
+    int tamImage = sizeX * sizeY * 4; //image entrada
+    int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel  imagem saida
     unsigned char* ptrImg = image;//ponteiro para o vetor imagem
     float mantissa = 0.0;   
     float *bkp;
     bkp = fpixels;
+    float* ptrE = fpixels;    // Exposure
+    //float* ptrM = fpixels;     // Mapping 
+    //float* ptrG = fpixels;     // Gama 
+
+
+    
     for(int i=0;i<tamImage;i+=4){
         float mantissa = pow(2, image[i+3]-136);
         float v1 = image[i]*mantissa;
         float v2 = image[i+1]*mantissa;
         float v3 = image[i+2]*mantissa;
-        *fpixels++ = v1;
-        *fpixels++ = v2;
-        *fpixels++ = v3;       
-    } 
+        *fpixels = v1;
+        *fpixels++;
+        *fpixels = v2;
+        *fpixels++;
+        *fpixels = v3;
+        *fpixels++;      
+    }
+    fpixels = bkp;
+   
 
+      /////////////////EXPOSURE/////////////////////////
 
-    /////////////////EXPOSURE/////////////////////////
     printf("Exposure: %.3f", exposure);
     float expos = pow(2,exposure); 
     unsigned char* ptr = image8;
     unsigned char* ptr8 = image8;
-    printf("\nvalor em prt Init: %p", *ptr);
-    printf("\nvalor em prt Init: %d", *ptr);
-    printf("\nvalor em prt Init: %p | endereco img8: %x", ptr, &image8);
-    printf("\nvalor em img8 Init: %f", image8);
-    printf("\n ");
-
-    int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel    
+  
+ 
     for(int pos=0; pos<totalBytes; pos+=3) {              
         *ptr++ = (unsigned char) (*bkp++ * expos);        
         *ptr++ = (unsigned char) (*bkp++ * expos);
         *ptr++ = (unsigned char) (*bkp++ * expos);
     }
 
-    //////////////////MAPPING////////////////////////
-    //ptrImg = image8;//ponteiro para o vetor imagem
-    //unsigned char* ptr8 = image8;
-    printf("\nvalor em prt8 Init: %p", *ptr8);
-    printf("\nvalor em prt8 Init: %d", *ptr8);
-    printf("\nvalor em prt8 Init: %p | endereco img8: %x", ptr8, &image8);
-    printf("\nvalor em img8 Init: %f", image8);
-    
-    for(int pos1=0;pos1<totalBytes;pos1++){
 
-        float rbg = (*ptr8) * 0.6;
+/*
+    /////////////////EXPOSURE/////////////////////////
+    printf("\n Exposure: %.3f", exposure);
+    float expos = pow(2,exposure); 
+    unsigned char* ptr = image8;     
+    for(int pos=0; pos<totalBytes; pos+=3) {              
+        *fpixels++ = (*ptrE++ * expos);        
+        *fpixels++ = (*ptrE++ * expos);
+        *fpixels++ = (*ptrE++ * expos);
+    }*/
+
+
+    fpixels = bkp;    
+    //////////////////MAPPING////////////////////////
+    unsigned char* ptrM = image8;
+  
+    for(int pos1=0;pos1<totalBytes;pos1++){
+        float rbg = (*ptrM) * 0.6;
         float rgbResult =((rbg)*(2.51*(rbg) + 0.03))/((rbg)*(2.43*(rbg)+0.59)+0.14);     
         if(rgbResult>1){
-            *ptr8=  1;
+            *ptrM= (unsigned char) (1);
         }
         else if(rgbResult<0){
-            *ptr8=  0;
+            *ptrM= (unsigned char) (0);
         }else{
-            *ptr8 = rgbResult;
+            *ptrM = (unsigned char) (rgbResult);
         }
-        *ptr8++;
-    }
-        //i++;
-        //double blue = image[i] * 0.6;
-        //blue = (blue*(2.51*blue + 0,03))/(blue*(2,43*blue+0,59)+0,14);
-        //
-        //if(blue>1){
-        //    red=1;
-        //}
-        //else if(blue<0){
-        //    blue=0;
-        //}
-        //i = i+2;      
-        
+        *ptrM++;
+    }          
 
-    //free(fpixels);
+      ///////////////////////////CORREÇÃO GAMA///////////////////////////////////
+    fpixels = bkp;
+    unsigned char* ptrG = image8;
+    for(int pos1=0;pos1<totalBytes;pos1++){
+        float gama = (1/1.8);
+        gama = pow((*ptrG), gama);
+        *ptrG = (unsigned char) (gama);
+        *ptrG++;  
+    }
+    /////////////////////////24 bits///////////////////////////////////
+    unsigned char* ptrBit = image8;  
+    for(int pos1=0;pos1<totalBytes;pos1++){
+        float rgb8 = (*ptrBit) * 255;     
+        *ptrBit = (unsigned char)(rgb8);
+        *ptrBit++;  
+    }
+    *ptrBit--;
+    printf("\nValor em prtBit = %c", *ptrBit);
+    printf("\nValor em image8 = %d", image8[0]);
+    printf("\nValor em image8 = %02X", image8[0]);
+
+    /*
+    fpixels = bkp;
+    for(int i=0;i<totalBytes;i++){
+        float rgb8 = (*fpixels) * 255;     
+        image8[i] = (unsigned char)(rgb8);
+        *fpixels++;
+    }*/
+    
+
+    free(fpixels);
     buildTex();
     
 }
