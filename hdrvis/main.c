@@ -98,7 +98,7 @@ void process()
 
 
     /////////////////EXPOSURE/////////////////////////
-    printf("\n Exposure: %.3f", exposure);
+    //printf("\n Exposure: %.3f", exposure);
     float expos = pow(2,exposure); 
     unsigned char* ptr = image8;    
     unsigned char* ptrBit = image8;  
@@ -208,33 +208,55 @@ void process()
         if (histogram[i]<0) histogram[i]=0;        
     }
 
-    //////////////////////AJUSTED////////////////////
+    //////////////////////AJUSTED//////////////////// com correção de preto/branco e novo histrograma
     ptrRGB = image8;
     fpixels = bkp; //recupera o inicio de fpxiels com os valores de Intensidade
     for(int j=0; j<totalBytes; j+=3){
         float Ia = ( MIN(1, (MAX(0,(*fpixels)-minLevel)) / (maxLevel-minLevel)) )*255;
 
+
         float RBG = ((*ptrRGB)*Ia)/(*fpixels); //Red
         if(RBG>255) RBG=255;
-        if(RBG<0) RBG=255;
+        if(RBG<0) RBG=255;        
         *ptrRGB = RBG;
         *ptrRGB++;
-             
+    
 
         RBG = ((*ptrRGB)*Ia)/(*fpixels); //Blue
         if(RBG>255) RBG=255;
-        if(RBG<0) RBG=255;
+        if(RBG<0) RBG=255;        
         *ptrRGB = RBG;
         *ptrRGB++;
+   
 
         RBG = ((*ptrRGB)*Ia)/(*fpixels); //Green
         if(RBG>255) RBG=255;
-        if(RBG<0) RBG=255;
+        if(RBG<0) RBG=255;        
         *ptrRGB = RBG;
         *ptrRGB++;
+    
 
-        *fpixels++;
+        //atualizando o novo histograma//
+        int IaHistogramAux = (int)(Ia);
+        adjusted[IaHistogramAux]++;
+
+        *fpixels++;//proximo valor do array de intensidade
     }
+
+    //encontra o maior de ajusted
+    float maiorEncontradoAjusted = 0;
+    for(int i = 0; i<HISTSIZE; i++){
+        if(adjusted[i]>maiorEncontradoAjusted) maiorEncontradoAjusted=adjusted[i];
+    }
+
+    //-----normalizar/calcular novo histograma(ajusted)
+    //normalizar
+    for(int i = 0; i<HISTSIZE; i++){
+        adjusted[i]= histogram[i]/maiorEncontrado; 
+        if (adjusted[i]>1) adjusted[i]=1;
+        if (adjusted[i]<0) adjusted[i]=0;        
+    }
+
 
 
     buildTex();
