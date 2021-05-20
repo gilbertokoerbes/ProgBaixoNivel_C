@@ -3,6 +3,8 @@
 
 // Rotinas para acesso da OpenGL
 #include "opengl.h"
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 // Protótipos
 void process();
@@ -45,7 +47,7 @@ int maxLevel = 255;
 void process()
 {
 
-    /////////////////MANTISSA/////////////////////////
+    
     float* fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));//array apara alocar RGB's em Float
     int tamImage = sizeX * sizeY * 4; //image entrada
     int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel  imagem saida
@@ -56,9 +58,7 @@ void process()
     float* ptrE = fpixels;    // Exposure
     float* ptrM = fpixels;     // Mapping 
     float* ptrG = fpixels;     // Gama 
-
-
-    
+    /////////////////MANTISSA/////////////////////////    
     for(int i=0;i<tamImage;i+=4){
         float mantissa = pow(2, image[i+3]-136);
         float v1 = image[i]*mantissa;
@@ -100,20 +100,21 @@ void process()
     /////////////////EXPOSURE/////////////////////////
     printf("\n Exposure: %.3f", exposure);
     float expos = pow(2,exposure); 
-    unsigned char* ptr = image8;     
-    for(int pos=0; pos<totalBytes; pos+=3) {              
-        *fpixels++ = (*ptrE++ * expos);        
-        *fpixels++ = (*ptrE++ * expos);
-        *fpixels++ = (*ptrE++ * expos);
-    }
+    unsigned char* ptr = image8;    
+    unsigned char* ptrBit = image8;  
+    for(int pos=0; pos<totalBytes; pos++) {              
+        *fpixels = (*ptrE++ * expos);        
+      //  *fpixels++ = (*ptrE++ * expos);
+      //  *fpixels++ = (*ptrE++ * expos);
+    //}
 
 
-    fpixels = bkp;    
+    //fpixels = bkp;    
     //////////////////MAPPING////////////////////////
     //unsigned char* ptrM = image8;
     //printf("\n ===========MAPPING INIT:===========");
     //printf("\n TotalBytes = %d", totalBytes);
-    for(int pos1=0;pos1<totalBytes;pos1++){
+    //for(int pos1=0;pos1<totalBytes;pos1++){
         float rgb = (*ptrM) * 0.6;
         //printf("\n RGB8 0.6 = %f", rgb);
         float rgbResult =((rgb)*(2.51*(rgb) + 0.03))/((rgb)*(2.43*(rgb)+0.59)+0.14);   
@@ -122,32 +123,32 @@ void process()
         if(rgbResult<0) rgbResult = 0; 
         //printf("\n RGB8 result = %f", rgbResult);
 
-        *fpixels++ = rgbResult;
+        //*fpixels++ = rgbResult;
         
         //printf("\n valor gravado no ponteiro: %p", *fpixels);
         *ptrM++;
         //printf("\n i = %d", pos1);
-    }          
+   // }          
     //printf("\n MAPPING OK:");
     //printf("\n =====GAMA INIT:========");
       ///////////////////////////CORREÇÃO GAMA///////////////////////////////////
-    fpixels = bkp;
+    //fpixels = bkp;
     //unsigned char* ptrG = image8;
-    for(int pos1=0;pos1<totalBytes;pos1++){
+    //for(int pos1=0;pos1<totalBytes;pos1++){
         float gama = (1/1.8);
         gama = pow((*ptrG), gama);
         //printf("\n Gama calculado = %f", gama);
         *fpixels = gama;
        // printf("\n valor gravado no ponteiro: %p", *fpixels);
         *ptrG++;
-        *fpixels++;  
-    }
+       // *fpixels++;  
+    //}
    // printf("\n =====GAMA OK:========");
-    fpixels = bkp;
+    //fpixels = bkp;
     /////////////////////////24 bits///////////////////////////////////
     //printf("\n =====24 bits INIT:========");
-    unsigned char* ptrBit = image8;  
-    for(int pos1=0;pos1<totalBytes;pos1++){
+    
+    //for(int pos1=0;pos1<totalBytes;pos1++){
         float rgb8 = (*fpixels) * 255;
         if (rgb8>255) rgb8 = 255;
         if (rgb8<0) rgb8 = 0;
@@ -159,16 +160,83 @@ void process()
         *fpixels++;
     }
     //printf("\n 24 bits OK:");
-    /*fpixels = bkp;
+    //
+    /*
     for(int i=0;i<totalBytes;i++){
         float rgb8 = (*fpixels) * 255;     
         image8[i] = (unsigned char)(rgb8);
         *fpixels++;
     }
-    printf("\n 24 bits OK:");*/
-    
+    //printf("\n 24 bits OK:");*/    
 
     //free(fpixels);
+    
+    //////INICIA HISTOGRAMA E AJUSTED/////
+    for (int i=0; i<HISTSIZE; i++) {
+    adjusted[i]=0;
+    histogram[i]=0;
+    }
+    /////////////////HISTOGRAMA///////////////////////
+    fpixels = bkp; // fpixels agora servira de suporte para guardar I='intensidade' que devera ser usado nos calculos de AJUSTED
+    unsigned char* ptrRGB = image8;
+    for(int j=0; j<totalBytes; j+=3){
+        float I;    
+        I= (0.299*(*ptrRGB));
+        *ptrRGB++;        
+
+        I += (0.587*(*ptrRGB));
+        *ptrRGB++;
+
+        I += (0.114*(*ptrRGB));
+        *ptrRGB++;        
+        int Iaux = (int)(I);
+        histogram[Iaux]++;
+        *fpixels++ = I; // fpixles guarda o valor da Intensidade do pixel (os calos de r + g + b)
+
+    }     
+    //encontra o maior
+    float maiorEncontrado=0;
+    for(int i = 0; i<HISTSIZE; i++){
+        if(histogram[i]>maiorEncontrado) { 
+            maiorEncontrado=histogram[i];
+        }
+    }
+    //normalizar
+    for(int i = 0; i<HISTSIZE; i++){
+        histogram[i]= histogram[i]/maiorEncontrado; 
+        if (histogram[i]>1) histogram[i]=1;
+        if (histogram[i]<0) histogram[i]=0;        
+    }
+
+    //////////////////////AJUSTED////////////////////
+    ptrRGB = image8;
+    fpixels = bkp; //recupera o inicio de fpxiels com os valores de Intensidade
+    for(int j=0; j<totalBytes; j+=3){
+        float Ia = ( MIN(1, (MAX(0,(*fpixels)-minLevel)) / (maxLevel-minLevel)) )*255;
+
+        float RBG = ((*ptrRGB)*Ia)/(*fpixels); //Red
+        if(RBG>255) RBG=255;
+        if(RBG<0) RBG=255;
+        *ptrRGB = RBG;
+        *ptrRGB++;
+             
+
+        RBG = ((*ptrRGB)*Ia)/(*fpixels); //Blue
+        if(RBG>255) RBG=255;
+        if(RBG<0) RBG=255;
+        *ptrRGB = RBG;
+        *ptrRGB++;
+
+        RBG = ((*ptrRGB)*Ia)/(*fpixels); //Green
+        if(RBG>255) RBG=255;
+        if(RBG<0) RBG=255;
+        *ptrRGB = RBG;
+        *ptrRGB++;
+
+        *fpixels++;
+    }
+
+
     buildTex();
     
 }
