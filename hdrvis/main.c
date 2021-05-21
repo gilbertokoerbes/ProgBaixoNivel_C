@@ -210,8 +210,8 @@ void process()
         if (adjusted[i] < 0)
             adjusted[i] = 0;
     }
-
-    //free(fpixels);
+    fpixels = bkp;//reseta o ponteiro fpixels
+    free(fpixels);
     buildTex();
 }
 
