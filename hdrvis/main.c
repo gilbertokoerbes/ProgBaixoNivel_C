@@ -1,5 +1,5 @@
 #include <math.h>
-#include <string.h>		// para usar strings
+#include <string.h> // para usar strings
 
 // Rotinas para acesso da OpenGL
 #include "opengl.h"
@@ -8,8 +8,8 @@
 
 // Protótipos
 void process();
-void carregaHeader(FILE* fp);
-void carregaImagem(FILE* fp, int largura, int altura);
+void carregaHeader(FILE *fp);
+void carregaImagem(FILE *fp, int largura, int altura);
 void criaImagensTeste();
 
 //
@@ -23,10 +23,10 @@ int sizeX, sizeY;
 unsigned char header[11];
 
 // Pixels da imagem de ENTRADA (em formato RGBE)
-unsigned char* image;
+unsigned char *image;
 
 // Pixels da imagem de SAÍDA (em formato RGB)
-unsigned char* image8;
+unsigned char *image8;
 
 // Fator de exposição
 float exposure;
@@ -47,245 +47,198 @@ int maxLevel = 255;
 void process()
 {
 
-    
-    float* fpixels = malloc(sizeX * sizeY * 3 * sizeof(float));//array apara alocar RGB's em Float
-    int tamImage = sizeX * sizeY * 4; //image entrada
-    int totalBytes = sizeX * sizeY * 3; // RGB = 3 bytes por pixel  imagem saida
-    unsigned char* ptrImg = image;//ponteiro para o vetor imagem
-    float mantissa = 0.0;   
+    float *fpixels = malloc(sizeX * sizeY * 3 * sizeof(float)); //array apara alocar RGB's em Float
+    int tamImage = sizeX * sizeY * 4;                           //image entrada
+    int totalBytes = sizeX * sizeY * 3;                         // RGB = 3 bytes por pixel  imagem saida
+    unsigned char *ptrImg = image;                              //ponteiro para o vetor imagem
+    float mantissa = 0.0;
     float *bkp;
     bkp = fpixels;
-    float* ptrE = fpixels;    // Exposure
-    float* ptrM = fpixels;     // Mapping 
-    float* ptrG = fpixels;     // Gama 
-    /////////////////MANTISSA/////////////////////////    
-    for(int i=0;i<tamImage;i+=4){
-        float mantissa = pow(2, image[i+3]-136);
-        float v1 = image[i]*mantissa;
-        float v2 = image[i+1]*mantissa;
-        float v3 = image[i+2]*mantissa;
+    float *ptrE = fpixels; // Exposure
+    float *ptrM = fpixels; // Mapping
+    float *ptrG = fpixels; // Gama
+    /////////////////MANTISSA/////////////////////////
+    for (int i = 0; i < tamImage; i += 4)
+    {
+        float mantissa = pow(2, image[i + 3] - 136);
+        float v1 = image[i] * mantissa;
+        float v2 = image[i + 1] * mantissa;
+        float v3 = image[i + 2] * mantissa;
         *fpixels = v1;
         *fpixels++;
         *fpixels = v2;
         *fpixels++;
         *fpixels = v3;
-        *fpixels++;      
+        *fpixels++;
     }
     fpixels = bkp;
-    //printf ("\nImage entrada [0] = %02X", image[0]);
-   
-
-      /////////////////EXPOSURE/////////////////////////
-/*
-    printf("\n Exposure: %.3f", exposure);
-    float expos = pow(2,exposure);
-    printf("\n Expos calculado: %f", expos);
-    unsigned char* ptr = image8;
-    unsigned char* ptr8 = image8;  
- 
-    for(int pos=0; pos<totalBytes; pos+=3) {              
-        *ptr++ = (unsigned char) (*ptrE++ * expos);        
-        *ptr++ = (unsigned char) (*ptrE++ * expos);
-        *ptr++ = (unsigned char) (*ptrE++ * expos);
-    }
-    *ptr--;
-    printf("\n Expos ptr: %c", *ptr);
-    printf("\n Expos ptr: %f", *ptr);
-*/
-
-
-
-
-
+    
     /////////////////EXPOSURE/////////////////////////
     //printf("\n Exposure: %.3f", exposure);
-    float expos = pow(2,exposure); 
-    unsigned char* ptr = image8;    
-    unsigned char* ptrBit = image8;  
-    for(int pos=0; pos<totalBytes; pos++) {              
-        *fpixels = (*ptrE++ * expos);        
-      //  *fpixels++ = (*ptrE++ * expos);
-      //  *fpixels++ = (*ptrE++ * expos);
-    //}
+    float expos = pow(2, exposure);
+    unsigned char *ptr = image8;
+    unsigned char *ptrBit = image8;
 
+    //////////////////////////MAPPING-GAMA-24bits//////////////////////////
+    for (int pos = 0; pos < totalBytes; pos++)
+    { //unico 'for' realiza as tres operações de forma estruturada
+        *fpixels = (*ptrE++ * expos);
 
-    //fpixels = bkp;    
-    //////////////////MAPPING////////////////////////
-    //unsigned char* ptrM = image8;
-    //printf("\n ===========MAPPING INIT:===========");
-    //printf("\n TotalBytes = %d", totalBytes);
-    //for(int pos1=0;pos1<totalBytes;pos1++){
+        //////////////////MAPPING////////////////////////
         float rgb = (*ptrM) * 0.6;
-        //printf("\n RGB8 0.6 = %f", rgb);
-        float rgbResult =((rgb)*(2.51*(rgb) + 0.03))/((rgb)*(2.43*(rgb)+0.59)+0.14);   
+        float rgbResult = ((rgb) * (2.51 * (rgb) + 0.03)) / ((rgb) * (2.43 * (rgb) + 0.59) + 0.14);
 
-        if(rgbResult>1) rgbResult= 1;
-        if(rgbResult<0) rgbResult = 0; 
-        //printf("\n RGB8 result = %f", rgbResult);
-
-        //*fpixels++ = rgbResult;
-        
-        //printf("\n valor gravado no ponteiro: %p", *fpixels);
+        if (rgbResult > 1)
+            rgbResult = 1;
+        if (rgbResult < 0)
+            rgbResult = 0;
         *ptrM++;
-        //printf("\n i = %d", pos1);
-   // }          
-    //printf("\n MAPPING OK:");
-    //printf("\n =====GAMA INIT:========");
-      ///////////////////////////CORREÇÃO GAMA///////////////////////////////////
-    //fpixels = bkp;
-    //unsigned char* ptrG = image8;
-    //for(int pos1=0;pos1<totalBytes;pos1++){
-        float gama = (1/1.8);
-        gama = pow((*ptrG), gama);
-        //printf("\n Gama calculado = %f", gama);
-        *fpixels = gama;
-       // printf("\n valor gravado no ponteiro: %p", *fpixels);
-        *ptrG++;
-       // *fpixels++;  
-    //}
-   // printf("\n =====GAMA OK:========");
-    //fpixels = bkp;
-    /////////////////////////24 bits///////////////////////////////////
-    //printf("\n =====24 bits INIT:========");
-    
-    //for(int pos1=0;pos1<totalBytes;pos1++){
-        float rgb8 = (*fpixels) * 255;
-        if (rgb8>255) rgb8 = 255;
-        if (rgb8<0) rgb8 = 0;
-        
-        //printf("\n RGB8 = %f", rgb8);    
-        *ptrBit = (unsigned char)(rgb8);
-        //printf("\n ptrBit gravado = %c", *ptrBit);
-        *ptrBit++;  
-        *fpixels++;
-    }
-    //printf("\n 24 bits OK:");
-    //
-    /*
-    for(int i=0;i<totalBytes;i++){
-        float rgb8 = (*fpixels) * 255;     
-        image8[i] = (unsigned char)(rgb8);
-        *fpixels++;
-    }
-    //printf("\n 24 bits OK:");*/    
 
-    //free(fpixels);
-    
+        //////////////////GAMA////////////////////////
+        float gama = (1 / 1.8);
+        gama = pow((*ptrG), gama);
+        *fpixels = gama;
+        *ptrG++;
+
+        //////////////////24bits////////////////////////
+        float rgb8 = (*fpixels) * 255;
+        if (rgb8 > 255)
+            rgb8 = 255;
+        if (rgb8 < 0)
+            rgb8 = 0;
+
+        *ptrBit = (unsigned char)(rgb8);
+        *ptrBit++;
+        *fpixels++;
+    }
+
     //////INICIA HISTOGRAMA E AJUSTED/////
-    for (int i=0; i<HISTSIZE; i++) {
-    adjusted[i]=0;
-    histogram[i]=0;
+    for (int i = 0; i < HISTSIZE; i++)
+    {
+        adjusted[i] = 0;
+        histogram[i] = 0;
     }
     /////////////////HISTOGRAMA///////////////////////
     fpixels = bkp; // fpixels agora servira de suporte para guardar I='intensidade' que devera ser usado nos calculos de AJUSTED
-    unsigned char* ptrRGB = image8;
-    for(int j=0; j<totalBytes; j+=3){
-        float I;    
-        I= (0.299*(*ptrRGB));
-        *ptrRGB++;        
-
-        I += (0.587*(*ptrRGB));
+    unsigned char *ptrRGB = image8;
+    for (int j = 0; j < totalBytes; j += 3)
+    {
+        float I; //dividimos a formula em partes
+        I = (0.299 * (*ptrRGB));
         *ptrRGB++;
 
-        I += (0.114*(*ptrRGB));
-        *ptrRGB++;        
+        I += (0.587 * (*ptrRGB));
+        *ptrRGB++;
+
+        I += (0.114 * (*ptrRGB));
+        *ptrRGB++;
         int Iaux = (int)(I);
         histogram[Iaux]++;
         *fpixels++ = I; // fpixles guarda o valor da Intensidade do pixel (os calos de r + g + b)
-
-    }     
+    }
     //encontra o maior
-    float maiorEncontrado=0;
-    for(int i = 0; i<HISTSIZE; i++){
-        if(histogram[i]>maiorEncontrado) { 
-            maiorEncontrado=histogram[i];
+    float maiorEncontrado = 0;
+    for (int i = 0; i < HISTSIZE; i++)
+    {
+        if (histogram[i] > maiorEncontrado)
+        {
+            maiorEncontrado = histogram[i];
         }
     }
     //normalizar
-    for(int i = 0; i<HISTSIZE; i++){
-        histogram[i]= histogram[i]/maiorEncontrado; 
-        if (histogram[i]>1) histogram[i]=1;
-        if (histogram[i]<0) histogram[i]=0;        
+    for (int i = 0; i < HISTSIZE; i++)
+    {
+        histogram[i] = histogram[i] / maiorEncontrado;
+        if (histogram[i] > 1)
+            histogram[i] = 1;
+        if (histogram[i] < 0)
+            histogram[i] = 0;
     }
 
-    //////////////////////AJUSTED//////////////////// com correção de preto/branco e novo histrograma
+    //////////////////////AJUSTED-preto&branco////////////////////
     ptrRGB = image8;
     fpixels = bkp; //recupera o inicio de fpxiels com os valores de Intensidade
-    for(int j=0; j<totalBytes; j+=3){
-        float Ia = ( MIN(1, (MAX(0,(*fpixels)-minLevel)) / (maxLevel-minLevel)) )*255;
+    for (int j = 0; j < totalBytes; j += 3)
+    {
+        float Ia = (MIN(1, (MAX(0, (*fpixels) - minLevel)) / (maxLevel - minLevel))) * 255;
 
-
-        float RBG = ((*ptrRGB)*Ia)/(*fpixels); //Red
-        if(RBG>255) RBG=255;
-        if(RBG<0) RBG=255;        
+        float RBG = ((*ptrRGB) * Ia) / (*fpixels); //Red
+        if (RBG > 255)
+            RBG = 255;
+        if (RBG < 0)
+            RBG = 255;
         *ptrRGB = RBG;
         *ptrRGB++;
-    
 
-        RBG = ((*ptrRGB)*Ia)/(*fpixels); //Blue
-        if(RBG>255) RBG=255;
-        if(RBG<0) RBG=255;        
+        RBG = ((*ptrRGB) * Ia) / (*fpixels); //Blue
+        if (RBG > 255)
+            RBG = 255;
+        if (RBG < 0)
+            RBG = 255;
         *ptrRGB = RBG;
         *ptrRGB++;
-   
 
-        RBG = ((*ptrRGB)*Ia)/(*fpixels); //Green
-        if(RBG>255) RBG=255;
-        if(RBG<0) RBG=255;        
+        RBG = ((*ptrRGB) * Ia) / (*fpixels); //Green
+        if (RBG > 255)
+            RBG = 255;
+        if (RBG < 0)
+            RBG = 255;
         *ptrRGB = RBG;
         *ptrRGB++;
-    
 
         //atualizando o novo histograma//
         int IaHistogramAux = (int)(Ia);
         adjusted[IaHistogramAux]++;
 
-        *fpixels++;//proximo valor do array de intensidade
+        *fpixels++; //proximo valor do array de intensidade
     }
 
     //encontra o maior de ajusted
     float maiorEncontradoAjusted = 0;
-    for(int i = 0; i<HISTSIZE; i++){
-        if(adjusted[i]>maiorEncontradoAjusted) maiorEncontradoAjusted=adjusted[i];
+    for (int i = 0; i < HISTSIZE; i++)
+    {
+        if (adjusted[i] > maiorEncontradoAjusted)
+            maiorEncontradoAjusted = adjusted[i];
     }
 
     //-----normalizar/calcular novo histograma(ajusted)
-    //normalizar
-    for(int i = 0; i<HISTSIZE; i++){
-        adjusted[i]= histogram[i]/maiorEncontrado; 
-        if (adjusted[i]>1) adjusted[i]=1;
-        if (adjusted[i]<0) adjusted[i]=0;        
+    for (int i = 0; i < HISTSIZE; i++)
+    {
+        adjusted[i] = adjusted[i] / maiorEncontradoAjusted;
+        if (adjusted[i] > 1)
+            adjusted[i] = 1;
+        if (adjusted[i] < 0)
+            adjusted[i] = 0;
     }
 
-
-
+    //free(fpixels);
     buildTex();
-    
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 
-    if(argc==1) {
+    if (argc == 1)
+    {
         printf("hdrvis [image file.hdf]\n");
         exit(1);
     }
 
     // Inicialização da janela gráfica
-    init(argc,argv);
+    init(argc, argv);
 
     //
     // PASSO 1: Leitura da imagem
     // A leitura do header já foi feita abaixo
-    // 
-    FILE* arq = fopen(argv[1], "rb");
+    //
+    FILE *arq = fopen(argv[1], "rb");
     carregaHeader(arq);
 
-    sizeX = (header[3] * 1)+(header[4] * 256)+(header[5] * 65536 )+(header[6]*4294967296); // le largura
-    sizeY = (header[7] * 1)+(header[8] * 256)+(header[9] * 65536 )+(header[10]*4294967296); // le altura
+    sizeX = (header[3] * 1) + (header[4] * 256) + (header[5] * 65536) + (header[6] * 4294967296);  // le largura
+    sizeY = (header[7] * 1) + (header[8] * 256) + (header[9] * 65536) + (header[10] * 4294967296); // le altura
     printf("Largura %d  x  Altura %d\n", sizeX, sizeY);
     carregaImagem(arq, sizeX, sizeY);
-    
+
     // Fecha o arquivo
     fclose(arq);
 
@@ -308,7 +261,7 @@ int main(int argc, char** argv)
     // K/L: reduzir/aumentar o nível máximo (white point)
     // H: exibir/ocultar o histograma
     // ESC: finalizar o programa
-   
+
     glutMainLoop();
 
     return 0;
@@ -325,15 +278,15 @@ void criaImagensTeste()
     printf("%d x %d\n", sizeX, sizeY);
 
     // Aloca imagem de entrada (32 bits RGBE)
-    image = (unsigned char*) malloc(sizeof(unsigned char) * sizeX * sizeY * 4);
+    image = (unsigned char *)malloc(sizeof(unsigned char) * sizeX * sizeY * 4);
 
     // Aloca memória para imagem de saída (24 bits RGB)
-    image8 = (unsigned char*) malloc(sizeof(unsigned char) * sizeX * sizeY * 3);
+    image8 = (unsigned char *)malloc(sizeof(unsigned char) * sizeX * sizeY * 3);
 }
 
 // Esta função deverá ser utilizada para ler o conteúdo do header
 // para a variável header (depois você precisa extrair a largura e altura da imagem desse vetor)
-void carregaHeader(FILE* fp)
+void carregaHeader(FILE *fp)
 {
     // Lê 11 bytes do início do arquivo
     fread(header, 11, 1, fp);
@@ -343,23 +296,22 @@ void carregaHeader(FILE* fp)
 
 // Esta função deverá ser utilizada para carregar o restante
 // da imagem (após ler o header e extrair a largura e altura corretamente)
-void carregaImagem(FILE* fp, int largura, int altura)
+void carregaImagem(FILE *fp, int largura, int altura)
 {
     sizeX = largura;
     sizeY = altura;
 
     // Aloca imagem de entrada (32 bits RGBE)
-    image = (unsigned char*) malloc(sizeof(unsigned char) * sizeX * sizeY * 4);
+    image = (unsigned char *)malloc(sizeof(unsigned char) * sizeX * sizeY * 4);
 
     // Aloca memória para imagem de saída (24 bits RGB)
-    image8 = (unsigned char*) malloc(sizeof(unsigned char) * sizeX * sizeY * 3);
+    image8 = (unsigned char *)malloc(sizeof(unsigned char) * sizeX * sizeY * 3);
 
     // Lê o restante da imagem de entrada
     fread(image, sizeX * sizeY * 4, 1, fp);
     // Exibe primeiros 3 pixels, para verificação
-    for(int i=0; i<12; i+=4) {
-        printf("%02X %02X %02X %02X\n", image[i], image[i+1], image[i+2], image[i+3]);
+    for (int i = 0; i < 12; i += 4)
+    {
+        printf("%02X %02X %02X %02X\n", image[i], image[i + 1], image[i + 2], image[i + 3]);
     }
 }
-
-
