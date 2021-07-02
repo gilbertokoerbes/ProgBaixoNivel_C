@@ -59,7 +59,7 @@ Img *source;
 Img *mask;
 Img *target;
 
-//ponteiro de cpoia de source
+//ponteiro de cópia de source
 Img *sourceCopy;
 
 // Imagem selecionada (0,1,2)
@@ -84,21 +84,22 @@ void seamcarve(int targetWidth)
 {
     // Aplica o algoritmo e gera a saida em target->img...
    // float *fpixels = malloc(pic * sizeY * 3 * sizeof(float));
-   sourceCopy = source;   
+    sourceCopy = source;   
     int tamanhoImage = source->height * source->width;
-    float *fpixels = malloc(tamanhoImage * sizeof(float) * 3);
+    int *fpixels = malloc(tamanhoImage * sizeof(int) * 3);
     
     printf("Tamanho Height: %d\n ", source->height);
     printf("Tamanho Width: %d\n", source->width);
     printf("\nprint tamanho imagem %d\n", tamanhoImage);
 
-    for (int i = 0; i<tamanhoImage; i++){
-        
+    for (int i = 0; i<tamanhoImage; i++){//calcula energia das imagens
+    sourceCopy = source; 
 
-        //printf("\nprint R %u", sourceCopy->img->r);    
-        //printf("\nprint  G %u", sourceCopy->img->g);    
-        //printf("\nprint B %u", sourceCopy->img->b);
-        //printf("Teste");
+        printf("\nprint R %u", sourceCopy->img->r);  
+        sourceCopy->img++;  
+        printf("\nprint  R %u", sourceCopy->img->g);    
+        printf("\nprint B %u", sourceCopy->img->b);
+        printf("Teste");
 
         unsigned char RRight;
         unsigned char GRight;
@@ -107,56 +108,172 @@ void seamcarve(int targetWidth)
         unsigned char GLeft;
         unsigned char BLeft;
 
+        unsigned char RUp;
+        unsigned char GUp;
+        unsigned char BUp;
+        unsigned char RDown;
+        unsigned char GDown;
+        unsigned char BDown;
+        
         boolean bordaLeft = FALSE;
         if((i%source->width)==0){ 
             bordaLeft = TRUE; // verifica se é borda da esquerda
         }
         if(bordaLeft){// bordas da esquerda
+            source = sourceCopy;
+           printf("\n  Borda Left | valor de i = %d ", i);
+            source->img++;
+            RRight = source->img->r;
+            GRight = source->img->g;
+            BRight = source->img->b;
+            printf(" RRight = %u\n", RRight);
+            printf(" GRight = %u\n", GRight);
+            printf(" BRight = %u\n", BRight);
+            source = sourceCopy;
+            source->img= source->img + ((source->width)-1);
+            RLeft = source->img->r;
+            GLeft = source->img->g;
+            BLeft = source->img->b;
+            printf(" RLeft = %u\n", RLeft);
+            printf(" GLeft = %u\n", GLeft);
+            printf(" BLeft = %u\n", BLeft);
 
-            printf("  Borda Left | valor de i = %d ", i);
-            sourceCopy->img++;
-            RRight = sourceCopy->img->r;
-            GRight = sourceCopy->img->g;
-            BRight = sourceCopy->img->b;
-           
-            sourceCopy->img= sourceCopy->img + ((source->width)-1);
-            RLeft = sourceCopy->img->r;
-            GLeft = sourceCopy->img->g;
-            BLeft = sourceCopy->img->b;
+            source = sourceCopy; // recupera o bkp da variável
         }
+        
         boolean bordaRight = FALSE;
-            
         if(((i+1)%source->width)==0){
              bordaRight = TRUE;
         }
         if(bordaRight){     // bordas da direita
-            printf("  Borda Right | valor de i = %d\n", i);
-            sourceCopy->img= sourceCopy->img - ((source->width)-1);
-            RRight = sourceCopy->img->r;
-            GRight = sourceCopy->img->g;
-            BRight = sourceCopy->img->b;
-            sourceCopy->img= sourceCopy->img + ((source->width)-1);
-            sourceCopy->img--;           
-            RLeft = sourceCopy->img->r;
-            GLeft = sourceCopy->img->g;
-            BLeft = sourceCopy->img->b;
+
+            source = sourceCopy;            
+            printf("  Borda Right | valor de i = %d", i);
+            source->img= source->img - ((source->width)-1);
+            RRight = source->img->r;
+            GRight = source->img->g;
+            BRight = source->img->b;
+            source = sourceCopy;
+            source->img--;           
+            RLeft = source->img->r;
+            GLeft = source->img->g;
+            BLeft = source->img->b;
+
+            source = sourceCopy; // recupera o bkp da variável
+
         }
 
-        if(i>=0 || i<source->width){ // bordas de cima
+        boolean bordaUp = FALSE;
+        if(i>=0 && i<source->width){ // bordas de cima
+            bordaUp = TRUE;
+        }
+        if(bordaUp){
+            printf("   borda UP | i = %d", i);
+            source = sourceCopy;
+           
+            source->img = sourceCopy->img + ((source->width));
+            RDown = source->img->r;
+            GDown = source->img->g;
+            BDown = source->img->b;
+            source = sourceCopy;
+            printf(" RDown = %u\n", RDown);
+            printf(" GDown = %u\n", GDown);
+            printf(" BDown = %u\n", BDown);
+
+            
+            int aux =(source->width -1-i);
+            aux = (tamanhoImage-1 - aux);
+            source->img =  sourceCopy->img  + aux;//pega a ultima linha 
+            RUp = source->img->r;
+            GUp = source->img->g;
+            BUp = source->img->b;
+
+            source = sourceCopy;
 
         }
+        boolean bordaDown = FALSE;
+        if(i>=(tamanhoImage - source->width) && i<tamanhoImage) { // bordas de baixo
+            bordaDown = TRUE;
 
-        //if(i>=)
+        }
+        if(bordaDown){            
+            printf("\n    borda down | i = %d", i);
+            int aux =(tamanhoImage-1 - i);
+            aux = source->width - aux;             
+            source->img =  (sourceCopy->img  - i) + aux;  //PEGA A PRIMEIRA LINHA                   
+            RDown = source->img->r;
+            GDown = source->img->g;
+            BDown = source->img->b;
+
+            source = sourceCopy;
+
+            source->img =  sourceCopy->img  - source->width;
+            RUp = source->img->r;
+            GUp = source->img->g;
+            BUp = source->img->b;            
+
+            source = sourceCopy;
+        }
+
+       // if(bordaRight == FALSE && bordaLeft == FALSE){
+       //     printf("\n   borda normal linha | i = %d", i);
+       //     sourceCopy = source;
+       //     //source->img = source->img++;
+       //     RRight = sourceCopy->img->r;
+       //     GRight = sourceCopy->img->g;
+       //     BRight = sourceCopy->img->b;
+       //     sourceCopy = source;
+//
+       //     sourceCopy->img--;
+       //     RLeft = sourceCopy->img->r;
+       //     GLeft = sourceCopy->img->g;
+       //     BLeft = sourceCopy->img->b;
+       //     sourceCopy = source;
+       // }
+       // if(bordaUp ==FALSE && bordaDown == FALSE){
+       //     printf("\n    borda normal Y | i = %d", i);
+       //     source = sourceCopy;
+       //     source->img =  sourceCopy->img  - source->width;
+       //     RUp = source->img->r;
+       //     GUp = source->img->g;
+       //     BUp = source->img->b;  
+       //     source = sourceCopy;
+       //     
+       //     source->img = sourceCopy->img + ((source->width));
+       //     RDown = source->img->r;
+       //     GDown = source->img->g;
+       //     BDown = source->img->b;
+       //     
+       //     source = sourceCopy;           
+//
+       // }       
+       // source = sourceCopy;    
+        //*fpixels = RRight - RLeft;
+        int aux = RRight - RLeft;
+        printf("energia R = %d\n", aux);
+        //*fpixels++;
+
+        //*fpixels = GRight - GLeft;
+        aux = GRight - GLeft;
+        printf("energia G = %d\n", aux);
+        //*fpixels++;
         
-        //*fpixels++ = RRight - RLeft;
-        //*fpixels++ = GRight - GLeft;
-        //*fpixels++ = BRight - BLeft;
+        //*fpixels = BRight - BLeft;
+        aux = BRight - BLeft;
+        printf("energia B = %d\n", aux);
+        //*fpixels++;
+
+        source->img++;
+
+        ///printf("i = %d",  i);
         
     }
 
-    //Energia pixel [0][0] = R[0][1] - R[0][2];    
-    sourceCopy->img++;
-    free(sourceCopy);
+
+
+    //Energia pixel [0][0] = R[0][1] - R[0][2];  
+    source = sourceCopy;      
+    source->img++;
     //freemem(fpixels);
 
     RGB8(*ptr)
