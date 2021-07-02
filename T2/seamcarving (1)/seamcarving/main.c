@@ -59,9 +59,6 @@ Img *source;
 Img *mask;
 Img *target;
 
-//ponteiro de cópia de source
-Img *sourceCopy;
-
 // Imagem selecionada (0,1,2)
 int sel;
 
@@ -80,201 +77,191 @@ void load(char *name, Img *pic)
 
 //
 // Implemente AQUI o seu algoritmo
+
 void seamcarve(int targetWidth)
-{
-    // Aplica o algoritmo e gera a saida em target->img...
-   // float *fpixels = malloc(pic * sizeY * 3 * sizeof(float));
-    sourceCopy = source;   
-    int tamanhoImage = source->height * source->width;
-    int *fpixels = malloc(tamanhoImage * sizeof(int) * 3);
+{   
+    Img *sourceCopy = source;
+    int altura = source->height;
+    int larguraXY = source->width ;
+    int larguraRBG = source->width * 3; //largura para RBG
+    unsigned char MatrizRBG[altura][larguraRBG];
+
+    for (int i = 0; i < altura; i++)
+    {
+        for (int j = 0; j < larguraRBG; )
+        {
+            MatrizRBG[i][j] = source->img->r;
+            MatrizRBG[i][j+1] = source->img->g;
+            MatrizRBG[i][j+2] = source->img->b;
+            source->img++;
+            j = j+3;
+        }
+        //printf("\n i = %d", i);        
+    }
     
-    printf("Tamanho Height: %d\n ", source->height);
-    printf("Tamanho Width: %d\n", source->width);
-    printf("\nprint tamanho imagem %d\n", tamanhoImage);
+    
+    int Energy[altura][larguraXY];
 
-    for (int i = 0; i<tamanhoImage; i++){//calcula energia das imagens
-    sourceCopy = source; 
+    boolean bordaXLeft = FALSE;
+    boolean bordaXRight = FALSE;
+    boolean bordaYUp = FALSE;
+    boolean bordaYDown = FALSE;
 
-        printf("\nprint R %u", sourceCopy->img->r);  
-        sourceCopy->img++;  
-        printf("\nprint  R %u", sourceCopy->img->g);    
-        printf("\nprint B %u", sourceCopy->img->b);
-        printf("Teste");
-
-        unsigned char RRight;
-        unsigned char GRight;
-        unsigned char BRight;
-        unsigned char RLeft;
-        unsigned char GLeft;
-        unsigned char BLeft;
-
+for (int i = 0; i < altura; i++)
+    {   
         unsigned char RUp;
         unsigned char GUp;
         unsigned char BUp;
         unsigned char RDown;
         unsigned char GDown;
         unsigned char BDown;
+
+        unsigned char RLeft;
+        unsigned char GLeft;
+        unsigned char BLeft;
+        unsigned char RRight;
+        unsigned char GRight;
+        unsigned char BRight;
+
         
-        boolean bordaLeft = FALSE;
-        if((i%source->width)==0){ 
-            bordaLeft = TRUE; // verifica se é borda da esquerda
+
+
+        if(i == 0 ){ bordaYUp = TRUE;}
+        else if (i == altura) {bordaYDown = TRUE;}        
+        int k =0;
+        for (int j = 0; j < larguraRBG; )
+        {
+            if(j == 0 ){ bordaXLeft = TRUE;}
+            else if (j == larguraRBG-3) {bordaXRight = TRUE;}   
+            int R;
+            int G;
+            int B;
+            int energia;
+                   
+            //Para X
+            if(bordaXLeft){
+                RLeft = MatrizRBG[i][larguraRBG-3];
+                GLeft = MatrizRBG[i][larguraRBG-2];
+                BLeft = MatrizRBG[i][larguraRBG-1];
+                RRight = MatrizRBG[i][j+3];
+                GRight = MatrizRBG[i][j+4];
+                BRight = MatrizRBG[i][j+5];
+            }else if(bordaXRight){
+                RLeft = MatrizRBG[i][j-3];
+                GLeft = MatrizRBG[i][j-4];
+                BLeft = MatrizRBG[i][j-5];
+                RRight =MatrizRBG[i][0];
+                GRight =MatrizRBG[i][1]; 
+                BRight =MatrizRBG[i][2]; 
+
+            }else{
+                RLeft = MatrizRBG[i][j-3];
+                GLeft = MatrizRBG[i][j-4];
+                BLeft = MatrizRBG[i][j-5];
+                RRight =MatrizRBG[i][j+3];
+                GRight =MatrizRBG[i][j+4]; 
+                BRight =MatrizRBG[i][j+5];
+
+            }
+            R = RRight - RLeft;
+            G = GRight - GLeft;
+            B = BRight - BLeft;
+            energia = pow(R,2) + pow(G,2)+ pow(B,2);
+            //Para Y
+            if(bordaYUp){
+                RUp = MatrizRBG[altura][j];
+                GUp = MatrizRBG[altura][j+1];
+                BUp = MatrizRBG[altura][j+2];
+                RDown = MatrizRBG[i+1][j];
+                GDown = MatrizRBG[i+1][j+1];
+                BDown = MatrizRBG[i+1][j+2];
+            }else if(bordaYDown){
+                RUp = MatrizRBG[i-1][j];
+                GUp = MatrizRBG[i-1][j+1];
+                BUp = MatrizRBG[i-1][j+2];
+                RDown = MatrizRBG[0][j];
+                GDown = MatrizRBG[0][j+1];
+                BDown = MatrizRBG[0][j+2];               
+            }else{
+                RUp = MatrizRBG[i-1][j];
+                GUp = MatrizRBG[i-1][j+1];
+                BUp = MatrizRBG[i-1][j+2];
+                RDown = MatrizRBG[i+1][j];
+                GDown = MatrizRBG[i+1][j+1];
+                BDown = MatrizRBG[i+1][j+2];
+            }
+            //calcular
+            R = RUp - RDown;
+            G = GUp = GDown;
+            B = BUp - GDown;
+            //printf("\n Energia 1 Pre Soma  = %d", energia);
+            //int aux = (pow(R,2) + pow(G,2)+ pow(B,2));
+            //printf("\n Energia 2 Pre Soma = %d", aux);
+            energia = energia + (pow(R,2) + pow(G,2)+ pow(B,2));
+            //printf("\n Energia Pos Soma = %d", energia);
+            Energy[i][k] = energia;
+            //printf("\nValor gravado = %d", Energy[i][k]);
+
+
+            j = j+3;
+            k++;
         }
-        if(bordaLeft){// bordas da esquerda
-            source = sourceCopy;
-           printf("\n  Borda Left | valor de i = %d ", i);
-            source->img++;
-            RRight = source->img->r;
-            GRight = source->img->g;
-            BRight = source->img->b;
-            printf(" RRight = %u\n", RRight);
-            printf(" GRight = %u\n", GRight);
-            printf(" BRight = %u\n", BRight);
-            source = sourceCopy;
-            source->img= source->img + ((source->width)-1);
-            RLeft = source->img->r;
-            GLeft = source->img->g;
-            BLeft = source->img->b;
-            printf(" RLeft = %u\n", RLeft);
-            printf(" GLeft = %u\n", GLeft);
-            printf(" BLeft = %u\n", BLeft);
-
-            source = sourceCopy; // recupera o bkp da variável
-        }
-        
-        boolean bordaRight = FALSE;
-        if(((i+1)%source->width)==0){
-             bordaRight = TRUE;
-        }
-        if(bordaRight){     // bordas da direita
-
-            source = sourceCopy;            
-            printf("  Borda Right | valor de i = %d", i);
-            source->img= source->img - ((source->width)-1);
-            RRight = source->img->r;
-            GRight = source->img->g;
-            BRight = source->img->b;
-            source = sourceCopy;
-            source->img--;           
-            RLeft = source->img->r;
-            GLeft = source->img->g;
-            BLeft = source->img->b;
-
-            source = sourceCopy; // recupera o bkp da variável
-
-        }
-
-        boolean bordaUp = FALSE;
-        if(i>=0 && i<source->width){ // bordas de cima
-            bordaUp = TRUE;
-        }
-        if(bordaUp){
-            printf("   borda UP | i = %d", i);
-            source = sourceCopy;
-           
-            source->img = sourceCopy->img + ((source->width));
-            RDown = source->img->r;
-            GDown = source->img->g;
-            BDown = source->img->b;
-            source = sourceCopy;
-            printf(" RDown = %u\n", RDown);
-            printf(" GDown = %u\n", GDown);
-            printf(" BDown = %u\n", BDown);
-
-            
-            int aux =(source->width -1-i);
-            aux = (tamanhoImage-1 - aux);
-            source->img =  sourceCopy->img  + aux;//pega a ultima linha 
-            RUp = source->img->r;
-            GUp = source->img->g;
-            BUp = source->img->b;
-
-            source = sourceCopy;
-
-        }
-        boolean bordaDown = FALSE;
-        if(i>=(tamanhoImage - source->width) && i<tamanhoImage) { // bordas de baixo
-            bordaDown = TRUE;
-
-        }
-        if(bordaDown){            
-            printf("\n    borda down | i = %d", i);
-            int aux =(tamanhoImage-1 - i);
-            aux = source->width - aux;             
-            source->img =  (sourceCopy->img  - i) + aux;  //PEGA A PRIMEIRA LINHA                   
-            RDown = source->img->r;
-            GDown = source->img->g;
-            BDown = source->img->b;
-
-            source = sourceCopy;
-
-            source->img =  sourceCopy->img  - source->width;
-            RUp = source->img->r;
-            GUp = source->img->g;
-            BUp = source->img->b;            
-
-            source = sourceCopy;
-        }
-
-       // if(bordaRight == FALSE && bordaLeft == FALSE){
-       //     printf("\n   borda normal linha | i = %d", i);
-       //     sourceCopy = source;
-       //     //source->img = source->img++;
-       //     RRight = sourceCopy->img->r;
-       //     GRight = sourceCopy->img->g;
-       //     BRight = sourceCopy->img->b;
-       //     sourceCopy = source;
-//
-       //     sourceCopy->img--;
-       //     RLeft = sourceCopy->img->r;
-       //     GLeft = sourceCopy->img->g;
-       //     BLeft = sourceCopy->img->b;
-       //     sourceCopy = source;
-       // }
-       // if(bordaUp ==FALSE && bordaDown == FALSE){
-       //     printf("\n    borda normal Y | i = %d", i);
-       //     source = sourceCopy;
-       //     source->img =  sourceCopy->img  - source->width;
-       //     RUp = source->img->r;
-       //     GUp = source->img->g;
-       //     BUp = source->img->b;  
-       //     source = sourceCopy;
-       //     
-       //     source->img = sourceCopy->img + ((source->width));
-       //     RDown = source->img->r;
-       //     GDown = source->img->g;
-       //     BDown = source->img->b;
-       //     
-       //     source = sourceCopy;           
-//
-       // }       
-       // source = sourceCopy;    
-        //*fpixels = RRight - RLeft;
-        int aux = RRight - RLeft;
-        printf("energia R = %d\n", aux);
-        //*fpixels++;
-
-        //*fpixels = GRight - GLeft;
-        aux = GRight - GLeft;
-        printf("energia G = %d\n", aux);
-        //*fpixels++;
-        
-        //*fpixels = BRight - BLeft;
-        aux = BRight - BLeft;
-        printf("energia B = %d\n", aux);
-        //*fpixels++;
-
-        source->img++;
-
-        ///printf("i = %d",  i);
         
     }
 
+    //===========================Procurando caminho
+    int EnergiaAcumulada[larguraXY];//dois vetores possui ligação entre seus valores, especie de MAP
+    int PosFinal[larguraXY];           //dois vetores possui ligação entre seus valores, especie de MAP
+    for (int j = 0;j < larguraXY; j++)
+    {
+        int EnergiaAcumuladaCaminho=0;
+        int Direction = 0;
+        for (int i = 0; i < altura; i++)
+        {
+            int atualEnergy = MatrizRBG[i][j];
+            int D = MatrizRBG[i][j];;
+            int R = MatrizRBG[i][j];;
+            int L = MatrizRBG[i][j];;
+            if(Direction==0){//verifica bordas
+                D = MatrizRBG[i+1][Direction];  
+                R = MatrizRBG[i+1][Direction+1];
+                if(D<atualEnergy) {Direction = Direction; EnergiaAcumuladaCaminho += D;}
+                else if(D<atualEnergy) {Direction = Direction+1; EnergiaAcumuladaCaminho += R;}
+
+            }else if(Direction==larguraXY-1){ //verifica bordas
+                D = MatrizRBG[i+1][Direction];                
+                L = MatrizRBG[i+1][Direction-1];
+                if(D<atualEnergy) {Direction = Direction;EnergiaAcumuladaCaminho += D;}
+                else if(L<atualEnergy) {Direction = Direction-1; EnergiaAcumuladaCaminho += L;}
+            }else{
+                D = MatrizRBG[i+1][Direction];
+                R = MatrizRBG[i+1][Direction+1];
+                L = MatrizRBG[i+1][Direction-1];
+
+                if(D<atualEnergy) {Direction = Direction;EnergiaAcumuladaCaminho += D;}
+                else if(L<atualEnergy) {Direction = Direction-1; EnergiaAcumuladaCaminho += L;}
+                else {Direction = Direction; EnergiaAcumuladaCaminho += D;}
+            }
+            EnergiaAcumulada[j]=EnergiaAcumuladaCaminho;
+            PosFinal[j]=Direction;    
+        }
+    }
+    printf("\n Rodando");
+    source = sourceCopy;    
+
+ 
 
 
-    //Energia pixel [0][0] = R[0][1] - R[0][2];  
-    source = sourceCopy;      
-    source->img++;
-    //freemem(fpixels);
+
+
+    
+    
+
+
+
+
+
+    // Aplica o algoritmo e gera a saida em target->img...
 
     RGB8(*ptr)
     [target->width] = (RGB8(*)[target->width])target->img;
@@ -399,10 +386,9 @@ void keyboard(unsigned char key, int x, int y)
         freemem();
         exit(1);
     }
-    if (key >= '1' && key <= '3'){
+    if (key >= '1' && key <= '3')
         // 1-3: seleciona a imagem correspondente (origem, máscara e resultado)
         sel = key - '1';
-    }
     if (key == 's')
     {
         seamcarve(targetW);
