@@ -86,13 +86,19 @@ void seamcarve(int targetWidth)
    // float *fpixels = malloc(pic * sizeY * 3 * sizeof(float));
    sourceCopy = source;   
     int tamanhoImage = source->height * source->width;
-    float *fpixels = malloc(tamanhoImage * sizeof(float));
+    float *fpixels = malloc(tamanhoImage * sizeof(float) * 3);
     
-    for (int i = 0; i< source->width; i++){
-    
-        printf("\nprint R %u", sourceCopy->img->r);    
-        printf("\nprint  G %u", sourceCopy->img->g);    
-        printf("\nprint B %u", sourceCopy->img->b);
+    printf("Tamanho Height: %d\n ", source->height);
+    printf("Tamanho Width: %d\n", source->width);
+    printf("\nprint tamanho imagem %d\n", tamanhoImage);
+
+    for (int i = 0; i<tamanhoImage; i++){
+        
+
+        //printf("\nprint R %u", sourceCopy->img->r);    
+        //printf("\nprint  G %u", sourceCopy->img->g);    
+        //printf("\nprint B %u", sourceCopy->img->b);
+        //printf("Teste");
 
         unsigned char RRight;
         unsigned char GRight;
@@ -105,47 +111,53 @@ void seamcarve(int targetWidth)
         if((i%source->width)==0){ 
             bordaLeft = TRUE; // verifica se é borda da esquerda
         }
-        if(bordaLeft){    
+        if(bordaLeft){// bordas da esquerda
 
-            printf("Borda Left | valor de i = %d", i);
+            printf("  Borda Left | valor de i = %d ", i);
             sourceCopy->img++;
             RRight = sourceCopy->img->r;
             GRight = sourceCopy->img->g;
             BRight = sourceCopy->img->b;
            
-            imgAux= imgAux + ((source->width)-1);
-            RLeft = sourceCopy->imgAux->r;
-            GLeft = sourceCopy->imgAux->g;
-            BLeft = sourceCopy->imgAux->b;
+            sourceCopy->img= sourceCopy->img + ((source->width)-1);
+            RLeft = sourceCopy->img->r;
+            GLeft = sourceCopy->img->g;
+            BLeft = sourceCopy->img->b;
         }
         boolean bordaRight = FALSE;
             
         if(((i+1)%source->width)==0){
              bordaRight = TRUE;
         }
-        if(bordaRight){    
-            RGB8 imgAux = source->img;
-            printf("Borda Right | valor de i = %d", i);            
-            imgAux= imgAux - ((source->width)-1)
-            RRight = sourceCopy->imgAux->r;
-            GRight = sourceCopy->imgAux->g;
-            BRight = sourceCopy->imgAux->b;
-            imgAux= imgAux + ((source->width)-1)
-            imgAux--;            
-            RLeft = sourceCopy->imgAux->r;
-            GLeft = sourceCopy->imgAux->g;
-            BLeft = sourceCopy->imgAux->b;
+        if(bordaRight){     // bordas da direita
+            printf("  Borda Right | valor de i = %d\n", i);
+            sourceCopy->img= sourceCopy->img - ((source->width)-1);
+            RRight = sourceCopy->img->r;
+            GRight = sourceCopy->img->g;
+            BRight = sourceCopy->img->b;
+            sourceCopy->img= sourceCopy->img + ((source->width)-1);
+            sourceCopy->img--;           
+            RLeft = sourceCopy->img->r;
+            GLeft = sourceCopy->img->g;
+            BLeft = sourceCopy->img->b;
         }
+
+        if(i>=0 || i<source->width){ // bordas de cima
+
+        }
+
+        //if(i>=)
         
-        *fpixels = sourceCopy->img->r - ()    
+        //*fpixels++ = RRight - RLeft;
+        //*fpixels++ = GRight - GLeft;
+        //*fpixels++ = BRight - BLeft;
+        
     }
 
     //Energia pixel [0][0] = R[0][1] - R[0][2];    
     sourceCopy->img++;
-
-
-
-}
+    free(sourceCopy);
+    //freemem(fpixels);
 
     RGB8(*ptr)
     [target->width] = (RGB8(*)[target->width])target->img;
@@ -270,9 +282,10 @@ void keyboard(unsigned char key, int x, int y)
         freemem();
         exit(1);
     }
-    if (key >= '1' && key <= '3')
+    if (key >= '1' && key <= '3'){
         // 1-3: seleciona a imagem correspondente (origem, máscara e resultado)
         sel = key - '1';
+    }
     if (key == 's')
     {
         seamcarve(targetW);
